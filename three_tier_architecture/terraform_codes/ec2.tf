@@ -39,9 +39,9 @@ data "template_file" "userdata" {
             #!/bin/bash
             yum update -y
 
-            # Install Node.js 18
+            # Install Node.js 18 and nginx
             curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
-            yum install -y nodejs git
+            yum install -y nodejs git nginx
 
             # Clone your app
             cd /home/ec2-user
@@ -63,7 +63,7 @@ EOL
 
             # Create client environment
             cat > .env.local << EOL
-NEXT_PUBLIC_API_URL=http://${aws_lb.app_alb.dns_name}/api/
+NEXT_PUBLIC_API_URL=http://localhost:3001/
 EOL
 
             # Build client
@@ -80,6 +80,41 @@ EOL
             cd ../client
             sudo -u ec2-user pm2 start npm --name "reader-client" -- start
 
+            # Configure nginx as reverse proxy
+            cat > /etc/nginx/conf.d/reader.conf << EOL
+server {
+    listen 80;
+    server_name _;
+    
+    # API routes
+    location /api/ {
+        proxy_pass http://localhost:3001/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+    
+    # Client routes (default)
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+EOL
+            
+            # Remove default nginx config
+            rm -f /etc/nginx/conf.d/default.conf
+            
+            # Start nginx
+            systemctl enable nginx
+            systemctl start nginx
+            
             # Save PM2 processes
             sudo -u ec2-user pm2 save
             sudo -u ec2-user pm2 startup

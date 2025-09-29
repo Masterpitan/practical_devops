@@ -21,11 +21,8 @@ resource "aws_autoscaling_group" "app_asg" {
     create_before_destroy = true
   }
 
-  # Attach to both target groups
-  target_group_arns = [
-    aws_lb_target_group.app_tg.arn,    # Client (3000)
-    aws_lb_target_group.api_tg.arn     # API (3001)
-  ]
+  # Attach to ALB target group
+  target_group_arns = [aws_lb_target_group.app_tg.arn]
 }
 
 # Optional scale policy (simple CPU target)
