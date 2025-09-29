@@ -37,6 +37,9 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 data "template_file" "userdata" {
   template = <<-EOF
             #!/bin/bash
+            set -e
+            exec > >(tee /var/log/user-data.log) 2>&1
+
             yum update -y
 
             # Install Node.js 18 and nginx
@@ -57,6 +60,10 @@ data "template_file" "userdata" {
 DATABASE_URL="postgresql://postgres:m5mxhWbB*vJd6_Q@db.jmuoffnxerwetfglxono.supabase.co:5432/postgres"
 EOL
 
+            # Run database migrations
+            sudo -u ec2-user npx prisma migrate deploy
+            sudo -u ec2-user npx prisma db seed || echo "Seed failed or not configured"
+
             # Setup client
             cd ../client
             sudo -u ec2-user npm install
@@ -69,12 +76,15 @@ EOL
             # Build client
             sudo -u ec2-user npm run build
 
-            # Install PM2 for process management
-            npm install -g pm2
+            # Install PM2 for ec2-user
+            sudo -u ec2-user npm install -g pm2
 
             # Start server
             cd ../server
             sudo -u ec2-user pm2 start npm --name "reader-server" -- run start:prod
+
+            # Wait for server to start
+            sleep 10
 
             # Start client
             cd ../client
@@ -113,13 +123,14 @@ EOL
 
             # Start nginx
             systemctl enable nginx
-            systemctl start nginx
+            systemctl restart nginx
 
-            # Save PM2 processes
+            # Save PM2 processes for ec2-user
             sudo -u ec2-user pm2 save
-            sudo -u ec2-user pm2 startup
+            sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
             EOF
 }
+
 
 resource "aws_launch_template" "app_lt" {
   name_prefix   = "${var.env}-lt-"
