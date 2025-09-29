@@ -45,7 +45,7 @@ data "template_file" "userdata" {
 
             # Clone your app
             cd /home/ec2-user
-            git clone https://github.com/yourusername/your-repo.git reader-app
+            git clone https://github.com/Masterpitan/reader.git reader-app
             chown -R ec2-user:ec2-user reader-app
 
             # Setup server
@@ -85,7 +85,7 @@ EOL
 server {
     listen 80;
     server_name _;
-    
+
     # API routes
     location /api/ {
         proxy_pass http://localhost:3001/;
@@ -95,7 +95,7 @@ server {
         proxy_set_header Host \$host;
         proxy_cache_bypass \$http_upgrade;
     }
-    
+
     # Client routes (default)
     location / {
         proxy_pass http://localhost:3000;
@@ -107,14 +107,14 @@ server {
     }
 }
 EOL
-            
+
             # Remove default nginx config
             rm -f /etc/nginx/conf.d/default.conf
-            
+
             # Start nginx
             systemctl enable nginx
             systemctl start nginx
-            
+
             # Save PM2 processes
             sudo -u ec2-user pm2 save
             sudo -u ec2-user pm2 startup
