@@ -38,10 +38,51 @@ data "template_file" "userdata" {
   template = <<-EOF
             #!/bin/bash
             yum update -y
-            amazon-linux-extras install -y nginx1
-            systemctl enable nginx
-            systemctl start nginx
-            echo "<h1>Hello from ${var.env} app instance $(hostname)</h1>" > /usr/share/nginx/html/index.html
+
+            # Install Node.js 18
+            curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
+            yum install -y nodejs git
+
+            # Clone your app
+            cd /home/ec2-user
+            git clone https://github.com/yourusername/your-repo.git reader-app
+            chown -R ec2-user:ec2-user reader-app
+
+            # Setup server
+            cd reader-app/server
+            sudo -u ec2-user npm install
+
+            # Create environment file
+            cat > .env << EOL
+DATABASE_URL="postgresql://postgres:m5mxhWbB*vJd6_Q@db.jmuoffnxerwetfglxono.supabase.co:5432/postgres"
+EOL
+
+            # Setup client
+            cd ../client
+            sudo -u ec2-user npm install
+
+            # Create client environment
+            cat > .env.local << EOL
+NEXT_PUBLIC_API_URL=http://${aws_lb.app_alb.dns_name}/api/
+EOL
+
+            # Build client
+            sudo -u ec2-user npm run build
+
+            # Install PM2 for process management
+            npm install -g pm2
+
+            # Start server
+            cd ../server
+            sudo -u ec2-user pm2 start npm --name "reader-server" -- run start:prod
+
+            # Start client
+            cd ../client
+            sudo -u ec2-user pm2 start npm --name "reader-client" -- start
+
+            # Save PM2 processes
+            sudo -u ec2-user pm2 save
+            sudo -u ec2-user pm2 startup
             EOF
 }
 
