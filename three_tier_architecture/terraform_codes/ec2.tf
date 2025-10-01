@@ -33,103 +33,11 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_role.name
 }
 */
-# User data for app instances (simple nginx)
+# User data from external file
 data "template_file" "userdata" {
-  template = <<-EOF
-            #!/bin/bash
-            set -e
-            exec > >(tee /var/log/user-data.log) 2>&1
-
-            yum update -y
-
-            # Install Node.js 18 and nginx
-            curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
-            yum install -y nodejs git nginx
-
-            # Clone your app
-            cd /home/ec2-user
-            git clone https://github.com/Masterpitan/reader.git reader-app
-            chown -R ec2-user:ec2-user reader-app
-
-            # Setup server
-            cd reader-app/server
-            sudo -u ec2-user npm install
-
-            # Create environment file
-            cat > .env << EOL
-DATABASE_URL="postgresql://postgres:m5mxhWbB*vJd6_Q@db.jmuoffnxerwetfglxono.supabase.co:5432/postgres"
-EOL
-
-            # Run database migrations
-            sudo -u ec2-user npx prisma migrate deploy
-            sudo -u ec2-user npx prisma db seed || echo "Seed failed or not configured"
-
-            # Setup client
-            cd ../client
-            sudo -u ec2-user npm install
-
-            # Create client environment
-            cat > .env.local << EOL
-NEXT_PUBLIC_API_URL=http://localhost:3001/
-EOL
-
-            # Build client
-            sudo -u ec2-user npm run build
-
-            # Install PM2 for ec2-user
-            sudo -u ec2-user npm install -g pm2
-
-            # Start server
-            cd ../server
-            sudo -u ec2-user pm2 start npm --name "reader-server" -- run start:prod
-
-            # Wait for server to start
-            sleep 10
-
-            # Start client
-            cd ../client
-            sudo -u ec2-user pm2 start npm --name "reader-client" -- start
-
-            # Configure nginx as reverse proxy
-            cat > /etc/nginx/conf.d/reader.conf << EOL
-server {
-    listen 80;
-    server_name _;
-
-    # API routes
-    location /api/ {
-        proxy_pass http://localhost:3001/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
-    }
-
-    # Client routes (default)
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
-    }
+  template = file("${path.module}/user-data.sh")
 }
-EOL
 
-            # Remove default nginx config
-            rm -f /etc/nginx/conf.d/default.conf
-
-            # Start nginx
-            systemctl enable nginx
-            systemctl restart nginx
-
-            # Save PM2 processes for ec2-user
-            sudo -u ec2-user pm2 save
-            sudo env PATH=\$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
-            EOF
-}
 
 
 resource "aws_launch_template" "app_lt" {
@@ -137,7 +45,7 @@ resource "aws_launch_template" "app_lt" {
   image_id      = data.aws_ami.amazon_linux.id
   instance_type = var.instance_type
 #  iam_instance_profile {
- #   name = aws_iam_instance_profile.ec2_profile.name
+#   name = aws_iam_instance_profile.ec2_profile.name
   #}
 
   key_name = var.key_pair_name != "" ? var.key_pair_name : null

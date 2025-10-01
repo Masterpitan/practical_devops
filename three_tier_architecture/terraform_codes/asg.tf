@@ -4,7 +4,7 @@ resource "aws_autoscaling_group" "app_asg" {
   min_size                  = var.app_min_size
   max_size                  = var.app_max_size
   health_check_type         = "ELB"
-  health_check_grace_period = 120
+  health_check_grace_period = 600
   vpc_zone_identifier       = [for s in aws_subnet.private : s.id]
   launch_template {
     id      = aws_launch_template.app_lt.id
