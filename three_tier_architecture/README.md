@@ -6,7 +6,6 @@ The application connects to a **Supabase database** instead of AWS RDS.
 
 ## Project Structure
 
-```
 
 .
 ├── main.tf                # Main entrypoint (providers, backend config)
@@ -18,8 +17,6 @@ The application connects to a **Supabase database** instead of AWS RDS.
 ├── outputs.tf             # Key outputs (ALB DNS, etc.)
 ├── user-data.sh           # EC2 bootstrap script for app deployment
 └── terraform.tfvars       # Variable values (gitignored if sensitive)
-
-````
 
 ## Prerequisites
 
