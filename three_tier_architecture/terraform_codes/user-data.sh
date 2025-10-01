@@ -1,11 +1,11 @@
 #!/bin/bash
 exec > /var/log/user-data.log 2>&1
 
-yum update -y
+# Update system
+dnf update -y
 
-# Install Node.js 18 and nginx
-curl -fsSL https://rpm.nodesource.com/setup_18.x | bash -
-yum install -y nodejs git nginx
+# Install Node.js 18, git, and nginx (Amazon Linux 2023 uses dnf)
+dnf install -y nodejs npm git nginx
 
 # Install PM2 globally
 npm install -g pm2

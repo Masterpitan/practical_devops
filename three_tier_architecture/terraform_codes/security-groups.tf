@@ -70,26 +70,4 @@ resource "aws_security_group" "app_sg" {
   tags = { Name = "${var.env}-app-sg" }
 }
 
-# RDS SG - allow only from app_sg
-resource "aws_security_group" "rds_sg" {
-  name        = "${var.env}-rds-sg"
-  description = "Allow DB access from app instances"
-  vpc_id      = aws_vpc.this.id
 
-  ingress {
-    description     = "MySQL from app"
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = [aws_security_group.app_sg.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = { Name = "${var.env}-rds-sg" }
-}

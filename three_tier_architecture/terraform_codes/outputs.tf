@@ -3,10 +3,7 @@ output "alb_dns_name" {
   value       = aws_lb.app_alb.dns_name
 }
 
-output "rds_endpoint" {
-  description = "RDS endpoint"
-  value       = aws_db_instance.appdb.endpoint
-}
+
 /*
 output "rds_password" {
   description = "RDS random password (sensitive, printed by Terraform outputs)"

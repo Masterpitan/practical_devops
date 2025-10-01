@@ -1,52 +1,23 @@
-# AMI lookup (Amazon Linux 2)
+# AMI lookup (Amazon Linux 2023)
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+    values = ["al2023-ami-*-x86_64"]
   }
 }
-/*
-# IAM Role for SSM (optional, useful for management)
-resource "aws_iam_role" "ec2_role" {
-  name = "${var.env}-ec2-role"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action    = "sts:AssumeRole"
-      Effect    = "Allow"
-      Principal = { Service = "ec2.amazonaws.com" }
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ssm" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "${var.env}-ec2-profile"
-  role = aws_iam_role.ec2_role.name
-}
-*/
 # User data from external file
 data "template_file" "userdata" {
   template = file("${path.module}/user-data.sh")
 }
 
-
-
 resource "aws_launch_template" "app_lt" {
   name_prefix   = "${var.env}-lt-"
   image_id      = data.aws_ami.amazon_linux.id
   instance_type = var.instance_type
-#  iam_instance_profile {
-#   name = aws_iam_instance_profile.ec2_profile.name
-  #}
 
   key_name = var.key_pair_name != "" ? var.key_pair_name : null
 

@@ -25,7 +25,7 @@ variable "env" {
 
 variable "instance_type" {
   type    = string
-  default = "t3.micro"
+  default = "t3.small"
 }
 
 variable "app_desired_capacity" {
@@ -48,24 +48,7 @@ variable "key_pair_name" {
   default = "web-key"
 }
 
-variable "db_name" {
-  type    = string
-  default = "appdb"
-}
 
-variable "db_username" {
-  type    = string
-  default = "dbadmin"
-}
-
-variable "rds_instance_class" {
-  type    = string
-  default = "db.t3.micro"
-}
-variable "db_secret_name" {
-  description = "Name of the secret in AWS Secrets Manager that stores the DB credentials"
-  type        = string
-}
 
 variable "bastion_instance_type" {
   type    = string
