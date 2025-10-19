@@ -69,7 +69,7 @@ The application connects to a **Supabase database** instead of AWS RDS.
 7. **Get ALB DNS Name**
    After apply, Terraform outputs the ALB DNS name. Access your app in the browser:
 
-## 📜 User Data (EC2 Bootstrap)
+## User Data (EC2 Bootstrap)
 
 Each EC2 instance in the Auto Scaling Group runs `user-data.sh` on startup.
 This script:
@@ -92,13 +92,13 @@ To tear down the infrastructure:
 terraform destroy
 ```
 
-## 📌 Notes
+## Notes
 
 * Supabase is used for database needs. No RDS instance is provisioned.
 * Each AWS service (VPC, SG, ALB, ASG, etc.) is defined in a **separate Terraform file** for clarity.
 * EC2 instances are configured entirely through the `user-data.sh` script.
 
-## ✅ Outputs
+## Outputs
 
 * **Application Load Balancer DNS** → Entry point for the Reader App
 * **Bastion Host Public IP** (if provisioned) → For SSH into private EC2 instances
